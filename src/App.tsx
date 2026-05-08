@@ -346,6 +346,12 @@ export default function App() {
           <span className="text-[9px] uppercase font-mono tracking-[0.3em]">STATUS: {status.toUpperCase()}</span>
           <span className="text-[9px] uppercase font-mono tracking-[0.3em]">THREAT LEVEL: {mineCount > (cols * rows / 4) ? 'CRITICAL' : 'MODERATE'}</span>
           <span className="text-[9px] uppercase font-mono tracking-[0.3em]">CORE: V.4.2</span>
+          <span id="busuanzi_container_site_pv" className="text-[9px] uppercase font-mono tracking-[0.3em]" style={{ display: 'none' }}>
+            VIEWS: <span id="busuanzi_value_site_pv"></span>
+          </span>
+          <span id="busuanzi_container_site_uv" className="text-[9px] uppercase font-mono tracking-[0.3em]" style={{ display: 'none' }}>
+            VISITORS: <span id="busuanzi_value_site_uv"></span>
+          </span>
         </div>
         <div className="text-[9px] font-mono opacity-30 tracking-[0.2em] uppercase">
           PROTOCOL OVERRIDE: ACTIVE // GRID SIZE: {cols}X{rows}
