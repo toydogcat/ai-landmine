@@ -40,6 +40,10 @@ export default function App() {
   const [flags, setFlags] = useState(0);
   const [time, setTime] = useState(0);
   
+  // Mobile / Responsive states
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [mobileMode, setMobileMode] = useState<'dig' | 'flag'>('dig');
+  
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const initBoard = useCallback((w: number, h: number, m: number) => {
@@ -199,31 +203,39 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen bg-[#0A0A0A] text-white flex flex-col font-sans overflow-hidden">
+    <div className="h-screen bg-[#0A0A0A] text-white flex flex-col font-sans overflow-hidden select-none">
       {/* Header Section */}
-      <header className="h-32 border-b border-white/10 flex items-center justify-between px-12 shrink-0">
-        <h1 className="text-8xl font-black tracking-tighter leading-none select-none">
-          {mineCount}<span className="text-[#C1FF00]">MINES</span>
-        </h1>
-        <div className="flex gap-12 text-right">
+      <header className="h-20 md:h-32 border-b border-white/10 flex items-center justify-between px-6 md:px-12 shrink-0">
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl md:text-8xl font-black tracking-tighter leading-none select-none">
+            {mineCount}<span className="text-[#C1FF00]">MINES</span>
+          </h1>
+          <button 
+            onClick={() => setIsSettingsOpen(true)}
+            className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 border border-white/20 text-[9px] font-bold uppercase tracking-[0.2em] hover:bg-white/5 cursor-pointer rounded"
+          >
+            <Settings2 size={12} className="text-[#C1FF00]" /> SETTINGS
+          </button>
+        </div>
+        <div className="flex gap-4 md:gap-12 text-right">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.3em] opacity-40 mb-1 font-mono">Session Time</p>
-            <p className="text-4xl font-bold font-mono tracking-tight">
+            <p className="text-[8px] md:text-[10px] uppercase tracking-[0.3em] opacity-40 mb-0.5 md:mb-1 font-mono">Session Time</p>
+            <p className="text-xl md:text-4xl font-bold font-mono tracking-tight">
               {Math.floor(time / 60).toString().padStart(2, '0')}:{ (time % 60).toString().padStart(2, '0') }
             </p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-[0.3em] opacity-40 mb-1 font-mono">Flags Left</p>
-            <p className="text-4xl font-bold font-mono text-[#C1FF00] tracking-tight">
+            <p className="text-[8px] md:text-[10px] uppercase tracking-[0.3em] opacity-40 mb-0.5 md:mb-1 font-mono">Flags Left</p>
+            <p className="text-xl md:text-4xl font-bold font-mono text-[#C1FF00] tracking-tight">
               {Math.max(0, mineCount - flags).toString().padStart(3, '0')}
             </p>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 flex overflow-hidden">
-        {/* Sidebar Controls */}
-        <aside className="w-80 border-r border-white/10 p-12 flex flex-col shrink-0">
+      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+        {/* Sidebar Controls (Desktop) */}
+        <aside className="hidden lg:flex w-80 border-r border-white/10 p-12 flex flex-col shrink-0">
           <div className="space-y-12">
             <div className="group">
               <label className="text-[10px] uppercase tracking-[0.4em] text-[#C1FF00] font-bold block mb-4">Dimensions</label>
@@ -282,8 +294,107 @@ export default function App() {
           </div>
         </aside>
 
+        {/* Settings Drawer (Mobile overlay) */}
+        <AnimatePresence>
+          {isSettingsOpen && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-30 lg:hidden flex items-center justify-center p-6 bg-[#0A0A0A]/95 backdrop-blur-md"
+            >
+              <motion.div 
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                className="bg-[#1A1A1A] p-8 border border-white/10 shadow-2xl relative max-w-sm w-full overflow-y-auto max-h-[85vh] rounded"
+              >
+                <button 
+                  onClick={() => setIsSettingsOpen(false)}
+                  className="absolute top-4 right-4 text-white/60 hover:text-white text-lg font-bold cursor-pointer"
+                >
+                  ✕
+                </button>
+                <h3 className="text-lg font-black uppercase tracking-[0.2em] mb-6 text-[#C1FF00]">Match Config</h3>
+                
+                <div className="space-y-8">
+                  <div>
+                    <label className="text-[9px] uppercase tracking-[0.3em] text-[#C1FF00] font-bold block mb-2">Dimensions</label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[8px] uppercase opacity-40 mb-1">Width</p>
+                        <input 
+                          type="number"
+                          value={tempCols}
+                          onChange={(e) => setTempCols(Math.max(5, Math.min(30, parseInt(e.target.value) || 5)))}
+                          className="w-full text-xl font-bold border-b border-white/20 bg-transparent py-1.5 focus:border-[#C1FF00] outline-none transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-[8px] uppercase opacity-40 mb-1">Height</p>
+                        <input 
+                          type="number"
+                          value={tempRows}
+                          onChange={(e) => setTempRows(Math.max(5, Math.min(30, parseInt(e.target.value) || 5)))}
+                          className="w-full text-xl font-bold border-b border-white/20 bg-transparent py-1.5 focus:border-[#C1FF00] outline-none transition-colors"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[9px] uppercase tracking-[0.3em] text-[#C1FF00] font-bold block mb-2">Explosives</label>
+                    <input 
+                      type="number"
+                      value={tempMineCount}
+                      onChange={(e) => setTempMineCount(Math.max(1, Math.min(tempCols * tempRows - 1, parseInt(e.target.value) || 1)))}
+                      className="w-full text-xl font-bold border-b border-white/20 bg-transparent py-1.5 focus:border-[#C1FF00] outline-none transition-colors"
+                    />
+                  </div>
+
+                  <button 
+                    onClick={() => {
+                      handleApplySettings();
+                      setIsSettingsOpen(false);
+                    }}
+                    className="w-full py-4 bg-[#C1FF00] text-black text-xs font-black uppercase tracking-[0.2em] rounded hover:bg-white transition-all active:scale-95 cursor-pointer"
+                  >
+                    Apply Config
+                  </button>
+                  
+                  <button 
+                    onClick={() => {
+                      handleReset();
+                      setIsSettingsOpen(false);
+                    }}
+                    className="w-full py-3 border border-white/20 text-white text-[10px] font-bold uppercase tracking-[0.2em] rounded hover:bg-white/5 transition-all cursor-pointer"
+                  >
+                    Reset Match
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Game Board Area */}
-        <section className="flex-1 bg-[#111111] flex items-center justify-center p-12 relative overflow-auto">
+        <section className="flex-1 bg-[#111111] flex items-center justify-center p-4 md:p-12 relative overflow-auto">
+          {/* Mobile Operation Switcher */}
+          <div className="lg:hidden absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex bg-[#1A1A1A]/95 backdrop-blur-md border border-white/10 p-1 rounded-full shadow-2xl gap-1 shrink-0">
+            <button 
+              onClick={() => setMobileMode('dig')}
+              className={`px-5 py-2.5 rounded-full flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] transition-all cursor-pointer ${mobileMode === 'dig' ? 'bg-[#C1FF00] text-black' : 'text-white/60 hover:text-white'}`}
+            >
+              ⛏️ DIG
+            </button>
+            <button 
+              onClick={() => setMobileMode('flag')}
+              className={`px-5 py-2.5 rounded-full flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] transition-all cursor-pointer ${mobileMode === 'flag' ? 'bg-[#C1FF00] text-black' : 'text-white/60 hover:text-white'}`}
+            >
+              🚩 FLAG
+            </button>
+          </div>
+
           {/* Status Overlay */}
           <AnimatePresence>
             {(status === 'won' || status === 'lost') && (
@@ -320,7 +431,7 @@ export default function App() {
           </AnimatePresence>
 
           <div 
-            className="grid gap-1 bg-white/5 p-1 border border-white/10 shadow-3xl"
+            className="grid gap-1 bg-white/5 p-1 border border-white/10 shadow-3xl select-none"
             style={{ 
               gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
               width: 'fit-content'
@@ -331,7 +442,14 @@ export default function App() {
                 <CellView 
                   key={`${x}-${y}`} 
                   cell={cell} 
-                  onClick={() => revealCell(x, y)}
+                  onClick={() => {
+                    if (mobileMode === 'flag') {
+                      const fakeEvent = { preventDefault: () => {} } as unknown as React.MouseEvent;
+                      toggleFlag(fakeEvent, x, y);
+                    } else {
+                      revealCell(x, y);
+                    }
+                  }}
                   onContextMenu={(e) => toggleFlag(e, x, y)}
                 />
               ))
@@ -341,20 +459,20 @@ export default function App() {
       </main>
 
       {/* Visual Footer Decoration */}
-      <footer className="h-12 border-t border-white/10 flex items-center px-12 justify-between shrink-0">
-        <div className="flex gap-8 opacity-30">
-          <span className="text-[9px] uppercase font-mono tracking-[0.3em]">STATUS: {status.toUpperCase()}</span>
-          <span className="text-[9px] uppercase font-mono tracking-[0.3em]">THREAT LEVEL: {mineCount > (cols * rows / 4) ? 'CRITICAL' : 'MODERATE'}</span>
-          <span className="text-[9px] uppercase font-mono tracking-[0.3em]">CORE: V.4.2</span>
-          <span id="busuanzi_container_site_pv" className="text-[9px] uppercase font-mono tracking-[0.3em]" style={{ display: 'none' }}>
+      <footer className="h-10 md:h-12 border-t border-white/10 flex items-center px-6 md:px-12 justify-between shrink-0">
+        <div className="flex gap-4 md:gap-8 opacity-30">
+          <span className="text-[7px] md:text-[9px] uppercase font-mono tracking-[0.3em] hidden sm:inline">STATUS: {status.toUpperCase()}</span>
+          <span className="text-[7px] md:text-[9px] uppercase font-mono tracking-[0.3em]">THREAT: {mineCount > (cols * rows / 4) ? 'CRITICAL' : 'MODERATE'}</span>
+          <span className="text-[7px] md:text-[9px] uppercase font-mono tracking-[0.3em] hidden md:inline">CORE: V.4.2</span>
+          <span id="busuanzi_container_site_pv" className="text-[7px] md:text-[9px] uppercase font-mono tracking-[0.3em]" style={{ display: 'none' }}>
             VIEWS: <span id="busuanzi_value_site_pv"></span>
           </span>
-          <span id="busuanzi_container_site_uv" className="text-[9px] uppercase font-mono tracking-[0.3em]" style={{ display: 'none' }}>
+          <span id="busuanzi_container_site_uv" className="text-[7px] md:text-[9px] uppercase font-mono tracking-[0.3em]" style={{ display: 'none' }}>
             VISITORS: <span id="busuanzi_value_site_uv"></span>
           </span>
         </div>
-        <div className="text-[9px] font-mono opacity-30 tracking-[0.2em] uppercase">
-          PROTOCOL OVERRIDE: ACTIVE // GRID SIZE: {cols}X{rows}
+        <div className="text-[7px] md:text-[9px] font-mono opacity-30 tracking-[0.2em] uppercase">
+          GRID: {cols}X{rows}
         </div>
       </footer>
     </div>
