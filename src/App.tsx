@@ -8,9 +8,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Flag, Bomb, RotateCcw, Timer, Settings2, Trophy, Skull } from 'lucide-react';
+import { Flag, Bomb, RotateCcw, Timer, Settings2, Trophy, Skull, Volume2, VolumeX, Play, Pause, Music } from 'lucide-react';
 
 type Cell = {
   isMine: boolean;
@@ -45,6 +45,157 @@ export default function App() {
   const [mobileMode, setMobileMode] = useState<'dig' | 'flag'>('dig');
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // BGM Audio State
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [volume, setVolume] = useState(0.4);
+  const [isMuted, setIsMuted] = useState(false);
+
+  useEffect(() => {
+    const audio = new Audio(`${(import.meta as any).env.BASE_URL}Midnight_Streets_of_Shilin.mp3`);
+    audio.loop = true;
+    audio.volume = isMuted ? 0 : volume;
+    audioRef.current = audio;
+
+    // Sync play state if audio is played or paused externally
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+
+    return () => {
+      audio.pause();
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audioRef.current = null;
+    };
+  }, []);
+
+  // Update volume when volume or mute state changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : volume;
+    }
+  }, [volume, isMuted]);
+
+  const toggleBgm = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch((err) => {
+        console.error("Audio playback failed: ", err);
+      });
+    }
+  };
+
+  const renderBgmPlayer = (compact = false) => {
+    if (compact) {
+      return (
+        <div className="flex items-center gap-3 bg-[#111111]/80 backdrop-blur-md border border-white/10 px-4 py-2.5 rounded-full shadow-lg shrink-0">
+          <button
+            onClick={toggleBgm}
+            className="w-7 h-7 rounded-full bg-[#C1FF00]/10 hover:bg-[#C1FF00]/20 flex items-center justify-center text-[#C1FF00] transition-colors cursor-pointer shrink-0"
+          >
+            {isPlaying ? <Pause size={12} fill="#C1FF00" /> : <Play size={12} className="ml-0.5" fill="#C1FF00" />}
+          </button>
+          
+          <div className="flex flex-col min-w-[90px] max-w-[120px]">
+            <span className="text-[7px] uppercase tracking-[0.2em] text-[#C1FF00] font-black font-mono leading-none mb-0.5">BGM ON AIR</span>
+            <span className="text-[9px] uppercase font-bold tracking-[0.05em] truncate text-white/80 font-mono leading-none">Shilin Streets</span>
+          </div>
+
+          <div className="flex gap-[2.5px] items-end h-3 px-1 shrink-0">
+            <div className={`w-[2px] bg-[#C1FF00] rounded-full transition-all ${isPlaying ? 'animate-eq-1' : 'h-[3px]'}`} />
+            <div className={`w-[2px] bg-[#C1FF00] rounded-full transition-all ${isPlaying ? 'animate-eq-2' : 'h-[5px]'}`} />
+            <div className={`w-[2px] bg-[#C1FF00] rounded-full transition-all ${isPlaying ? 'animate-eq-3' : 'h-[2px]'}`} />
+            <div className={`w-[2px] bg-[#C1FF00] rounded-full transition-all ${isPlaying ? 'animate-eq-4' : 'h-[4px]'}`} />
+          </div>
+
+          <button
+            onClick={() => setIsMuted(!isMuted)}
+            className="text-white/60 hover:text-white transition-colors cursor-pointer shrink-0 ml-1"
+          >
+            {isMuted || volume === 0 ? <VolumeX size={12} /> : <Volume2 size={12} />}
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="border border-white/10 bg-[#141414] p-5 rounded-lg relative overflow-hidden group">
+        {/* Glow effect when playing */}
+        <div className={`absolute inset-0 bg-[#C1FF00]/[0.01] transition-opacity duration-300 ${isPlaying ? 'opacity-100' : 'opacity-0'}`} />
+        <div className={`absolute -top-12 -left-12 w-24 h-24 bg-[#C1FF00]/5 rounded-full blur-2xl transition-opacity duration-300 ${isPlaying ? 'opacity-100' : 'opacity-0'}`} />
+
+        <div className="flex items-center justify-between mb-4 relative z-10">
+          <div className="flex items-center gap-2">
+            <Music size={14} className={isPlaying ? 'text-[#C1FF00] animate-pulse' : 'text-white/40'} />
+            <span className="text-[9px] uppercase tracking-[0.3em] font-black text-white/40 font-mono">SYSTEM AUDIO</span>
+          </div>
+          
+          <div className="flex gap-[3px] items-end h-4 shrink-0">
+            <div className={`w-[3px] bg-[#C1FF00] rounded-full transition-all ${isPlaying ? 'animate-eq-1' : 'h-1'}`} />
+            <div className={`w-[3px] bg-[#C1FF00] rounded-full transition-all ${isPlaying ? 'animate-eq-2' : 'h-[7px]'}`} />
+            <div className={`w-[3px] bg-[#C1FF00] rounded-full transition-all ${isPlaying ? 'animate-eq-3' : 'h-1.5'}`} />
+            <div className={`w-[3px] bg-[#C1FF00] rounded-full transition-all ${isPlaying ? 'animate-eq-4' : 'h-2'}`} />
+          </div>
+        </div>
+
+        {/* Track info card */}
+        <div className="bg-black/40 border border-white/5 p-3 mb-4 rounded relative overflow-hidden">
+          <p className="text-[7px] uppercase tracking-[0.4em] text-[#C1FF00]/80 font-black font-mono mb-1 leading-none">NOW PLAYING</p>
+          <div className="h-4 overflow-hidden relative">
+            <p className={`text-[10px] font-bold tracking-widest uppercase font-mono text-white/90 whitespace-nowrap absolute ${isPlaying ? 'animate-marquee' : ''}`}>
+              Midnight Streets of Shilin
+            </p>
+          </div>
+        </div>
+
+        {/* Media Controls */}
+        <div className="flex items-center gap-4 relative z-10">
+          <button
+            onClick={toggleBgm}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0 ${
+              isPlaying 
+                ? 'bg-[#C1FF00] text-black shadow-lg shadow-[#C1FF00]/25 hover:bg-white' 
+                : 'bg-white/10 text-white hover:bg-white/20'
+            }`}
+          >
+            {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} className="ml-0.5" fill="currentColor" />}
+          </button>
+
+          <div className="flex-1 flex items-center gap-3">
+            <button
+              onClick={() => setIsMuted(!isMuted)}
+              className="text-white/60 hover:text-white transition-colors cursor-pointer shrink-0"
+            >
+              {isMuted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            </button>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={isMuted ? 0 : volume}
+              onChange={(e) => {
+                const newVolume = parseFloat(e.target.value);
+                setVolume(newVolume);
+                if (isMuted && newVolume > 0) {
+                  setIsMuted(false);
+                }
+              }}
+              className="flex-1 cursor-pointer"
+            />
+          </div>
+        </div>
+        
+        {/* Accent border strip */}
+        <div className={`absolute bottom-0 left-0 h-[2px] transition-all duration-500 ${isPlaying ? 'w-full bg-[#C1FF00]' : 'w-0 bg-white/20'}`} />
+      </div>
+    );
+  };
 
   const initBoard = useCallback((w: number, h: number, m: number) => {
     // Basic validation
@@ -217,6 +368,12 @@ export default function App() {
             <Settings2 size={12} className="text-[#C1FF00]" /> SETTINGS
           </button>
         </div>
+
+        {/* Compact BGM Player for mobile/tablet (hidden on desktop) */}
+        <div className="hidden sm:flex lg:hidden">
+          {renderBgmPlayer(true)}
+        </div>
+
         <div className="flex gap-4 md:gap-12 text-right">
           <div>
             <p className="text-[8px] md:text-[10px] uppercase tracking-[0.3em] opacity-40 mb-0.5 md:mb-1 font-mono">Session Time</p>
@@ -285,6 +442,10 @@ export default function App() {
             >
               Reset Current Match
             </button>
+          </div>
+
+          <div className="my-8">
+            {renderBgmPlayer()}
           </div>
 
           <div className="mt-auto">
@@ -371,6 +532,10 @@ export default function App() {
                   >
                     Reset Match
                   </button>
+
+                  <div className="pt-6 border-t border-white/10">
+                    {renderBgmPlayer()}
+                  </div>
                 </div>
               </motion.div>
             </motion.div>
@@ -483,6 +648,7 @@ function CellView({ cell, onClick, onContextMenu }: {
   cell: Cell, 
   onClick: () => void, 
   onContextMenu: (e: React.MouseEvent) => void,
+  key?: string,
 }) {
   const getNumberColor = (num: number) => {
     switch (num) {
