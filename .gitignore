@@ -34,3 +34,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# reference files and builds
+custom-minesweeper.zip
+custom-minesweeper/
+/dist
+
